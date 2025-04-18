@@ -31,7 +31,7 @@ public class OrderController(IOrderService orderService) : ApiController
             CustomerName = request.CustomerName
         };
 
-        var result = await orderService.CreateOrderAsync(order, request.DishIds, cancellationToken);
+        var result = await orderService.CreateOrderAsync(order, request.DishesInOrder, cancellationToken);
         return Ok(result);
     }
 
@@ -44,7 +44,7 @@ public class OrderController(IOrderService orderService) : ApiController
             CustomerName = request.CustomerName
         };
 
-        var result = await orderService.UpdateOrderAsync(id, order, request.DishIds, cancellationToken);
+        var result = await orderService.UpdateOrderAsync(id, order, request.DishesInOrder, cancellationToken);
         return Ok(result);
     }
 

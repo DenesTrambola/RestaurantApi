@@ -4,9 +4,9 @@ using RestaurantApi.Domain.Entities;
 
 namespace RestaurantApi.Infrastructure.Persistence.Configurations;
 
-public class DishInOrderConfiguration : IEntityTypeConfiguration<DishInOrder>
+public class DishInOrderConfiguration : IEntityTypeConfiguration<DishesInOrder>
 {
-    public void Configure(EntityTypeBuilder<DishInOrder> builder)
+    public void Configure(EntityTypeBuilder<DishesInOrder> builder)
     {
         builder.HasKey(dio => new { dio.DishId, dio.OrderId });
 
@@ -15,7 +15,7 @@ public class DishInOrderConfiguration : IEntityTypeConfiguration<DishInOrder>
                .HasForeignKey(dio => dio.DishId);
 
         builder.HasOne(dio => dio.Order)
-               .WithMany(o => o.DishInOrders)
+               .WithMany(o => o.DishesInOrders)
                .HasForeignKey(dio => dio.OrderId);
 
         builder.Property(dio => dio.Quantity)

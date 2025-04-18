@@ -8,7 +8,7 @@ public class RestaurantDbContext : DbContext
 {
     public DbSet<Dish> Dishes { get; set; }
     public DbSet<Order> Orders { get; set; }
-    public DbSet<DishInOrder> DishInOrders { get; set; }
+    public DbSet<DishesInOrder> DishInOrders { get; set; }
 
     public RestaurantDbContext(DbContextOptions<RestaurantDbContext> options)
         : base(options)

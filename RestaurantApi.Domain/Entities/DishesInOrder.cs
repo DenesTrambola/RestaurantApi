@@ -1,6 +1,6 @@
 ﻿namespace RestaurantApi.Domain.Entities;
 
-public class DishInOrder
+public class DishesInOrder
 {
     public Guid DishId { get; set; }
     public Dish Dish { get; set; } = null!;

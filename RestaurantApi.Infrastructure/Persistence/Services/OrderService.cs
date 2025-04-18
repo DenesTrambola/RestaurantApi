@@ -1,116 +1,206 @@
 ﻿using ErrorOr;
 using Microsoft.EntityFrameworkCore;
+using RestaurantApi.Application.DTO;
 using RestaurantApi.Application.Services;
 using RestaurantApi.Domain.Entities;
 using RestaurantApi.Infrastructure.Persistence.Data;
 
 namespace RestaurantApi.Infrastructure.Persistence.Services;
 
-public class OrderService(RestaurantDbContext dbContext) : IOrderService
+public class OrderService : IOrderService
 {
-    public async Task<ErrorOr<Order>> CreateOrderAsync(Order order, ICollection<Guid> dishIds, CancellationToken cancellationToken = default)
+    private readonly RestaurantDbContext _context;
+
+    public OrderService(RestaurantDbContext context)
     {
+        _context = context;
+    }
+
+    public async Task<ErrorOr<OrderDto>> CreateOrderAsync(Order order, IDictionary<Guid, int> dishesInOrder, CancellationToken cancellationToken = default)
+    {
+        if (!dishesInOrder.Any())
+            return Error.Validation("At least one dish must be included in the order");
+
         order.CreatedAt = DateTime.UtcNow;
-        order.DishInOrders = new List<DishInOrder>();
+        var dishesInOrderDtos = new List<DishesInOrderDto>();
 
-        foreach (var dishId in dishIds)
+        foreach (var dishInOrder in dishesInOrder)
         {
-            var dish = await dbContext.Dishes.FirstOrDefaultAsync(d => d.Id == dishId, cancellationToken);
+            var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == dishInOrder.Key, cancellationToken);
             if (dish is null)
-                return Error.NotFound($"Dish with ID {dishId} not found");
+                return Error.NotFound($"Dish with ID {dishInOrder.Key} not found");
 
-            order.DishInOrders.Add(new DishInOrder
+            order.DishesInOrders.Add(new DishesInOrder
             {
-                DishId = dishId,
+                DishId = dishInOrder.Key,
                 OrderId = order.Id,
-                Quantity = 1 // За замовчуванням 1, можна зробити параметром
+                Quantity = dishInOrder.Value
+            });
+
+            dishesInOrderDtos.Add(new DishesInOrderDto
+            {
+                DishId = dishInOrder.Key,
+                Quantity = dishInOrder.Value,
+                Dish = new DishDto
+                {
+                    Id = dish.Id,
+                    Name = dish.Name,
+                    Price = dish.Price,
+                    Description = dish.Description
+                }
             });
         }
 
-        dbContext.Orders.Add(order);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return order;
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new OrderDto
+        {
+            Id = order.Id,
+            CustomerName = order.CustomerName,
+            CreatedAt = order.CreatedAt,
+            DishesInOrders = dishesInOrderDtos
+        };
     }
 
-    public async Task<ErrorOr<Order>> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ErrorOr<OrderDto>> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var order = await dbContext.Orders
-            .Include(o => o.DishInOrders)
+        var order = await _context.Orders
+            .Include(o => o.DishesInOrders)
             .ThenInclude(dio => dio.Dish)
-            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
-
-        return order is null ? Error.NotFound("Order not found") : order;
-    }
-
-    public async Task<ErrorOr<ICollection<Order>>> GetAllOrdersAsync(CancellationToken cancellationToken = default)
-    {
-        return await dbContext.Orders
-            .Include(o => o.DishInOrders)
-            .ThenInclude(dio => dio.Dish)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<ErrorOr<Order>> UpdateOrderAsync(Guid id, Order updatedOrder, ICollection<Guid> dishIds, CancellationToken cancellationToken = default)
-    {
-        var order = await dbContext.Orders
-            .AsTracking()
-            .Include(o => o.DishInOrders)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
         if (order is null)
             return Error.NotFound("Order not found");
 
+        return new OrderDto
+        {
+            Id = order.Id,
+            CustomerName = order.CustomerName,
+            CreatedAt = order.CreatedAt,
+            DishesInOrders = order.DishesInOrders.Select(dio => new DishesInOrderDto
+            {
+                DishId = dio.DishId,
+                Quantity = dio.Quantity,
+                Dish = new DishDto
+                {
+                    Id = dio.Dish.Id,
+                    Name = dio.Dish.Name,
+                    Price = dio.Dish.Price,
+                    Description = dio.Dish.Description
+                }
+            }).ToList()
+        };
+    }
+
+    public async Task<ErrorOr<ICollection<OrderDto>>> GetAllOrdersAsync(CancellationToken cancellationToken = default)
+    {
+        var orders = await _context.Orders
+            .Include(o => o.DishesInOrders)
+            .ThenInclude(dio => dio.Dish)
+            .ToListAsync(cancellationToken);
+
+        return orders.Select(o => new OrderDto
+        {
+            Id = o.Id,
+            CustomerName = o.CustomerName,
+            CreatedAt = o.CreatedAt,
+            DishesInOrders = o.DishesInOrders.Select(dio => new DishesInOrderDto
+            {
+                DishId = dio.DishId,
+                Quantity = dio.Quantity,
+                Dish = new DishDto
+                {
+                    Id = dio.Dish.Id,
+                    Name = dio.Dish.Name,
+                    Price = dio.Dish.Price,
+                    Description = dio.Dish.Description
+                }
+            }).ToList()
+        }).ToList();
+    }
+
+    public async Task<ErrorOr<OrderDto>> UpdateOrderAsync(Guid id, Order updatedOrder, IDictionary<Guid, int> dishesInOrder, CancellationToken cancellationToken = default)
+    {
+        var order = await _context.Orders
+            .Include(o => o.DishesInOrders)
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+
+        if (order is null)
+            return Error.NotFound("Order not found");
+
+        if (!dishesInOrder.Any())
+            return Error.Validation("At least one dish must be included in the order");
+
         order.CustomerName = updatedOrder.CustomerName;
 
-        dbContext.DishInOrders.RemoveRange(order.DishInOrders);
-        order.DishInOrders = new List<DishInOrder>();
+        _context.DishInOrders.RemoveRange(order.DishesInOrders);
+        order.DishesInOrders = new List<DishesInOrder>();
 
-        foreach (var dishId in dishIds)
+        foreach (var dishInOrder in dishesInOrder)
         {
-            var dish = await dbContext.Dishes.FirstOrDefaultAsync(d => d.Id == dishId, cancellationToken);
+            var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == dishInOrder.Key, cancellationToken);
             if (dish is null)
-                return Error.NotFound($"Dish with ID {dishId} not found");
+                return Error.NotFound($"Dish with ID {dishInOrder.Key} not found");
 
-            order.DishInOrders.Add(new DishInOrder
+            order.DishesInOrders.Add(new DishesInOrder
             {
-                DishId = dishId,
+                DishId = dishInOrder.Key,
                 OrderId = order.Id,
-                Quantity = 1 // За замовчуванням 1
+                Quantity = dishInOrder.Value
             });
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return order;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new OrderDto
+        {
+            Id = order.Id,
+            CustomerName = order.CustomerName,
+            CreatedAt = order.CreatedAt,
+            DishesInOrders = order.DishesInOrders.Select(dio => new DishesInOrderDto
+            {
+                DishId = dio.DishId,
+                Quantity = dio.Quantity,
+                Dish = new DishDto
+                {
+                    Id = dio.Dish.Id,
+                    Name = dio.Dish.Name,
+                    Price = dio.Dish.Price,
+                    Description = dio.Dish.Description
+                }
+            }).ToList()
+        };
     }
 
     public async Task<ErrorOr<Deleted>> DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var order = await dbContext.Orders.FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        var order = await _context.Orders.FindAsync(new object[] { id }, cancellationToken);
         if (order is null)
             return Error.NotFound("Order not found");
 
-        dbContext.Orders.Remove(order);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        _context.Orders.Remove(order);
+        await _context.SaveChangesAsync(cancellationToken);
         return Result.Deleted;
     }
 
     public async Task<ErrorOr<decimal>> CalculateProfitAsync(CancellationToken cancellationToken = default)
     {
-        var orders = await dbContext.Orders
-            .Include(o => o.DishInOrders)
+        var orders = await _context.Orders
+            .Include(o => o.DishesInOrders)
             .ThenInclude(dio => dio.Dish)
             .ToListAsync(cancellationToken);
 
         decimal profit = orders
-            .SelectMany(o => o.DishInOrders)
+            .SelectMany(o => o.DishesInOrders)
             .Sum(dio => dio.Quantity * dio.Dish.Price);
 
         return profit;
     }
 
-    public async Task<ErrorOr<Dish>> GetMostPopularDishAsync(CancellationToken cancellationToken = default)
+    public async Task<ErrorOr<DishDto>> GetMostPopularDishAsync(CancellationToken cancellationToken = default)
     {
-        var mostPopularDish = await dbContext.DishInOrders
+        var mostPopularDish = await _context.DishInOrders
             .GroupBy(dio => dio.DishId)
             .Select(g => new
             {
@@ -118,14 +208,21 @@ public class OrderService(RestaurantDbContext dbContext) : IOrderService
                 TotalQuantity = g.Sum(dio => dio.Quantity)
             })
             .OrderByDescending(g => g.TotalQuantity)
-            .Join(dbContext.Dishes,
+            .Join(_context.Dishes,
                 g => g.DishId,
                 d => d.Id,
                 (g, d) => d)
             .FirstOrDefaultAsync(cancellationToken);
 
-        return mostPopularDish is null
-            ? Error.NotFound("No dishes found")
-            : mostPopularDish;
+        if (mostPopularDish is null)
+            return Error.NotFound("No dishes found");
+
+        return new DishDto
+        {
+            Id = mostPopularDish.Id,
+            Name = mostPopularDish.Name,
+            Price = mostPopularDish.Price,
+            Description = mostPopularDish.Description
+        };
     }
 }

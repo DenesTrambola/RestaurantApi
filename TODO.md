@@ -1,4 +1,3 @@
-- Add DishInOrders.Quantity as optional parameter.
 - Add a Customer entity.
 - Add more methods into services/controllers.
 - Create custom ErrorOr types.

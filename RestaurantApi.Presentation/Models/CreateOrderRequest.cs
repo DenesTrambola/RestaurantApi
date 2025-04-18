@@ -9,5 +9,5 @@ public class CreateOrderRequest
     public string CustomerName { get; set; } = string.Empty;
 
     [Required]
-    public ICollection<Guid> DishIds { get; set; } = [];
+    public Dictionary<Guid, int> DishesInOrder { get; set; } = [];
 }
