@@ -1,0 +1,7 @@
+PUT http://localhost:5000/dishes/1c13eaeb-0548-481f-932c-ab111cbaead2
+Content-Type: application/json
+{
+  "name": "Salad",
+  "price": 12345,
+  "description": "Fresh garden salad with vinaigrette"
+}

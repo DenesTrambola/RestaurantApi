@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestaurantApi.Domain", "RestaurantApi.Domain\RestaurantApi.Domain.csproj", "{327D121C-CA2B-486C-87EE-D13741DBF931}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestaurantApi.Infrastructure", "RestaurantApi.Infrastructure\RestaurantApi.Infrastructure.csproj", "{14573A87-F8F4-4D39-A62E-CEDA7E138835}"
+	ProjectSection(ProjectDependencies) = postProject
+		{327D121C-CA2B-486C-87EE-D13741DBF931} = {327D121C-CA2B-486C-87EE-D13741DBF931}
+		{624550B2-80B1-4A8A-B656-35C80E717B98} = {624550B2-80B1-4A8A-B656-35C80E717B98}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestaurantApi.Application", "RestaurantApi.Application\RestaurantApi.Application.csproj", "{624550B2-80B1-4A8A-B656-35C80E717B98}"
+	ProjectSection(ProjectDependencies) = postProject
+		{327D121C-CA2B-486C-87EE-D13741DBF931} = {327D121C-CA2B-486C-87EE-D13741DBF931}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestaurantApi.Presentation", "RestaurantApi.Presentation\RestaurantApi.Presentation.csproj", "{52B6AA0C-76B2-475F-ACD6-C216CBA7E7BD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{14573A87-F8F4-4D39-A62E-CEDA7E138835} = {14573A87-F8F4-4D39-A62E-CEDA7E138835}
+		{327D121C-CA2B-486C-87EE-D13741DBF931} = {327D121C-CA2B-486C-87EE-D13741DBF931}
+		{624550B2-80B1-4A8A-B656-35C80E717B98} = {624550B2-80B1-4A8A-B656-35C80E717B98}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		TODO.md = TODO.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Requests", "Requests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		CreateDishRequest.http = CreateDishRequest.http
+		DeleteDishRequest.http = DeleteDishRequest.http
+		CreateOrderRequest.http = CreateOrderRequest.http
+		UpdateDishRequest.http = UpdateDishRequest.http
+		UpdateOrderRequest.http = UpdateOrderRequest.http
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{327D121C-CA2B-486C-87EE-D13741DBF931}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{327D121C-CA2B-486C-87EE-D13741DBF931}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{327D121C-CA2B-486C-87EE-D13741DBF931}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{327D121C-CA2B-486C-87EE-D13741DBF931}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14573A87-F8F4-4D39-A62E-CEDA7E138835}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14573A87-F8F4-4D39-A62E-CEDA7E138835}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14573A87-F8F4-4D39-A62E-CEDA7E138835}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14573A87-F8F4-4D39-A62E-CEDA7E138835}.Release|Any CPU.Build.0 = Release|Any CPU
+		{624550B2-80B1-4A8A-B656-35C80E717B98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{624550B2-80B1-4A8A-B656-35C80E717B98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{624550B2-80B1-4A8A-B656-35C80E717B98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{624550B2-80B1-4A8A-B656-35C80E717B98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52B6AA0C-76B2-475F-ACD6-C216CBA7E7BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52B6AA0C-76B2-475F-ACD6-C216CBA7E7BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52B6AA0C-76B2-475F-ACD6-C216CBA7E7BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52B6AA0C-76B2-475F-ACD6-C216CBA7E7BD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AD7FCCAB-9142-4A34-A4CB-974A0A1766E4}
+	EndGlobalSection
+EndGlobal
