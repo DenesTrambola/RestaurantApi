@@ -1,12 +1,13 @@
 ﻿using ErrorOr;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Services;
 using RestaurantApi.Domain.Entities;
 using RestaurantApi.Infrastructure.Persistence.Data;
 
 namespace RestaurantApi.Infrastructure.Persistence.Services;
 
-public class DishService(RestaurantDbContext dbContext) : IDishService
+public class DishService(RestaurantDbContext dbContext, ILogger<DishService> logger) : IDishService
 {
     public async Task<ErrorOr<List<Dish>>> GetAllDishesAsync(CancellationToken cancellationToken = default)
     {
@@ -23,6 +24,7 @@ public class DishService(RestaurantDbContext dbContext) : IDishService
     {
         dbContext.Dishes.Add(dish);
         await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Dish created with ID: {Id}", dish.Id);
         return dish;
     }
 
@@ -37,6 +39,7 @@ public class DishService(RestaurantDbContext dbContext) : IDishService
         existingDish.Description = dish.Description;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Dish updated with ID: {Id}", existingDish.Id);
         return existingDish;
     }
 
@@ -48,6 +51,7 @@ public class DishService(RestaurantDbContext dbContext) : IDishService
 
         dbContext.Dishes.Remove(dish);
         await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Dish deleted with ID: {Id}", dish.Id);
         return Result.Deleted;
     }
 }

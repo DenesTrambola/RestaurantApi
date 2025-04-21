@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RestaurantApi.Application\RestaurantApi.Application.csproj" />
     <ProjectReference Include="..\RestaurantApi.Domain\RestaurantApi.Domain.csproj" />
     <ProjectReference Include="..\RestaurantApi.Infrastructure\RestaurantApi.Infrastructure.csproj" />

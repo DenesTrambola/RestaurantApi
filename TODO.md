@@ -1,6 +1,3 @@
 - Add a Customer entity.
 - Add more methods into services/controllers.
 - Create custom ErrorOr types.
-- Implement Repository design pattern.
-- Implement Unit of Work pattern.
-- Implement custom exceptions.

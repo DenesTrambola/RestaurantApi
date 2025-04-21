@@ -1,5 +1,6 @@
 ﻿using ErrorOr;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.DTO;
 using RestaurantApi.Application.Services;
 using RestaurantApi.Domain.Entities;
@@ -7,15 +8,8 @@ using RestaurantApi.Infrastructure.Persistence.Data;
 
 namespace RestaurantApi.Infrastructure.Persistence.Services;
 
-public class OrderService : IOrderService
+public class OrderService(RestaurantDbContext context, ILogger<OrderService> logger) : IOrderService
 {
-    private readonly RestaurantDbContext _context;
-
-    public OrderService(RestaurantDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<ErrorOr<OrderDto>> CreateOrderAsync(Order order, IDictionary<Guid, int> dishesInOrder, CancellationToken cancellationToken = default)
     {
         if (!dishesInOrder.Any())
@@ -26,7 +20,7 @@ public class OrderService : IOrderService
 
         foreach (var dishInOrder in dishesInOrder)
         {
-            var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == dishInOrder.Key, cancellationToken);
+            var dish = await context.Dishes.FirstOrDefaultAsync(d => d.Id == dishInOrder.Key, cancellationToken);
             if (dish is null)
                 return Error.NotFound($"Dish with ID {dishInOrder.Key} not found");
 
@@ -51,8 +45,9 @@ public class OrderService : IOrderService
             });
         }
 
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync(cancellationToken);
+        context.Orders.Add(order);
+        await context.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Order created with ID: {Id}", order.Id);
 
         return new OrderDto
         {
@@ -65,7 +60,7 @@ public class OrderService : IOrderService
 
     public async Task<ErrorOr<OrderDto>> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var order = await _context.Orders
+        var order = await context.Orders
             .Include(o => o.DishesInOrders)
             .ThenInclude(dio => dio.Dish)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -95,7 +90,7 @@ public class OrderService : IOrderService
 
     public async Task<ErrorOr<ICollection<OrderDto>>> GetAllOrdersAsync(CancellationToken cancellationToken = default)
     {
-        var orders = await _context.Orders
+        var orders = await context.Orders
             .Include(o => o.DishesInOrders)
             .ThenInclude(dio => dio.Dish)
             .ToListAsync(cancellationToken);
@@ -122,7 +117,7 @@ public class OrderService : IOrderService
 
     public async Task<ErrorOr<OrderDto>> UpdateOrderAsync(Guid id, Order updatedOrder, IDictionary<Guid, int> dishesInOrder, CancellationToken cancellationToken = default)
     {
-        var order = await _context.Orders
+        var order = await context.Orders
             .Include(o => o.DishesInOrders)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
@@ -134,12 +129,12 @@ public class OrderService : IOrderService
 
         order.CustomerName = updatedOrder.CustomerName;
 
-        _context.DishInOrders.RemoveRange(order.DishesInOrders);
+        context.DishInOrders.RemoveRange(order.DishesInOrders);
         order.DishesInOrders = new List<DishesInOrder>();
 
         foreach (var dishInOrder in dishesInOrder)
         {
-            var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == dishInOrder.Key, cancellationToken);
+            var dish = await context.Dishes.FirstOrDefaultAsync(d => d.Id == dishInOrder.Key, cancellationToken);
             if (dish is null)
                 return Error.NotFound($"Dish with ID {dishInOrder.Key} not found");
 
@@ -151,7 +146,8 @@ public class OrderService : IOrderService
             });
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Order updated with ID: {Id}", order.Id);
 
         return new OrderDto
         {
@@ -175,18 +171,19 @@ public class OrderService : IOrderService
 
     public async Task<ErrorOr<Deleted>> DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var order = await _context.Orders.FindAsync(new object[] { id }, cancellationToken);
+        var order = await context.Orders.FindAsync(new object[] { id }, cancellationToken);
         if (order is null)
             return Error.NotFound("Order not found");
 
-        _context.Orders.Remove(order);
-        await _context.SaveChangesAsync(cancellationToken);
+        context.Orders.Remove(order);
+        await context.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Order deleted with ID: {Id}", order.Id);
         return Result.Deleted;
     }
 
     public async Task<ErrorOr<decimal>> CalculateProfitAsync(CancellationToken cancellationToken = default)
     {
-        var orders = await _context.Orders
+        var orders = await context.Orders
             .Include(o => o.DishesInOrders)
             .ThenInclude(dio => dio.Dish)
             .ToListAsync(cancellationToken);
@@ -200,7 +197,7 @@ public class OrderService : IOrderService
 
     public async Task<ErrorOr<DishDto>> GetMostPopularDishAsync(CancellationToken cancellationToken = default)
     {
-        var mostPopularDish = await _context.DishInOrders
+        var mostPopularDish = await context.DishInOrders
             .GroupBy(dio => dio.DishId)
             .Select(g => new
             {
@@ -208,7 +205,7 @@ public class OrderService : IOrderService
                 TotalQuantity = g.Sum(dio => dio.Quantity)
             })
             .OrderByDescending(g => g.TotalQuantity)
-            .Join(_context.Dishes,
+            .Join(context.Dishes,
                 g => g.DishId,
                 d => d.Id,
                 (g, d) => d)
